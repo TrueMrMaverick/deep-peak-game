@@ -4,13 +4,15 @@ import { useGameStore } from './useGameStore';
 
 const GameStoreContext = createContext<GameStore | null>(null);
 
+const selectWholeState = (state: GameState) => state;
+
 interface GameStoreProviderProps {
   initialState?: Partial<GameState>;
   children: ReactNode;
 }
 
 export function GameStoreProvider({ initialState, children }: GameStoreProviderProps) {
-  const store = useMemo(() => new GameStore(initialState), []);
+  const store = useMemo(() => new GameStore(initialState), [initialState]);
   return <GameStoreContext.Provider value={store}>{children}</GameStoreContext.Provider>;
 }
 
@@ -26,7 +28,6 @@ export function useGame(): GameState;
 export function useGame<T>(selector: (state: GameState) => T): T;
 export function useGame<T>(selector?: (state: GameState) => T): T | GameState {
   const store = useGameStoreContext();
-  const identity = (s: GameState): GameState => s;
-  const effectiveSelector = (selector ?? identity) as (s: GameState) => T | GameState;
-  return useGameStore(store, effectiveSelector);
+  const resolved = (selector ?? selectWholeState) as (state: GameState) => T;
+  return useGameStore(store, resolved);
 }

@@ -21,6 +21,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "strip-courier-svg": "node scripts/strip-courier-svg-background.mjs",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
