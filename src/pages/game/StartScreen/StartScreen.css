@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
+
 .StartScreen-overlay {
   position: absolute;
   inset: 0;
@@ -12,25 +14,27 @@
 .StartScreen-card {
   background: #00aeff;
   border-radius: 20px;
-  padding: 40px 52px;
+  padding: 36px 52px;
   text-align: center;
   box-shadow: 0 8px 40px rgba(0, 174, 255, 0.5);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  max-width: 420px;
+  gap: 14px;
+  max-width: 440px;
   width: 90%;
 }
 
-.StartScreen-icon {
-  font-size: 64px;
-  line-height: 1;
+.StartScreen-logo {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  border-radius: 16px;
 }
 
 .StartScreen-title {
   margin: 0;
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 900;
   color: #ffffff;
   text-transform: uppercase;
@@ -39,14 +43,14 @@
 
 .StartScreen-description {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.9);
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
 .StartScreen-button {
-  margin-top: 8px;
+  margin-top: 4px;
   padding: 14px 48px;
   font-size: 18px;
   font-weight: 900;
@@ -69,4 +73,14 @@
 .StartScreen-button:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.StartScreen-brand {
+  font-family: 'Orbitron', 'Courier New', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: 2px;
 }

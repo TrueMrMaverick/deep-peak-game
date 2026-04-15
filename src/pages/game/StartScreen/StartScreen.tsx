@@ -1,3 +1,4 @@
+import logo from '../images/logo.webp';
 import './StartScreen.css';
 
 interface StartScreenProps {
@@ -8,8 +9,8 @@ export function StartScreen({ onStart }: StartScreenProps) {
   return (
     <div className='StartScreen-overlay'>
       <div className='StartScreen-card'>
-        <div className='StartScreen-icon'>🛒</div>
-        <h1 className='StartScreen-title'>Курьер на складе</h1>
+        <img src={logo} alt='Логотип' className='StartScreen-logo' />
+        <h1 className='StartScreen-title'>Собеседование на складе</h1>
         <p className='StartScreen-description'>
           Товары едут по полкам — лови нужные для заказа!<br />
           Управляй руками курьера стрелками или WASD.<br />
@@ -18,6 +19,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
         <button className='StartScreen-button' onClick={onStart}>
           Начать!
         </button>
+        <span className='StartScreen-brand'>Deep Peak Production</span>
       </div>
     </div>
   );
