@@ -8,10 +8,16 @@ export function OrderPanel() {
   const order = useGame((s) => s.order);
   const orderNumber = useGame((s) => s.orderNumber);
 
+  // Максимум 2 строки — количество колонок = ceil(count / 2)
+  const cols = Math.ceil(order.length / 2);
+
   return (
     <div className='OrderPanel-root'>
       <div className='OrderPanel-title'>Заказ #{orderNumber}</div>
-      <ul className='OrderPanel-list'>
+      <ul
+        className='OrderPanel-list'
+        style={{ gridTemplateColumns: `repeat(${cols}, 140px)` }}
+      >
         {order.map((entry, i) => {
           const item = registry.getItem(entry.itemId);
           return (
