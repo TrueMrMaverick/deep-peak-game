@@ -1,9 +1,13 @@
+import { ItemRegistry } from '../../../game/ItemRegistry';
+
 export type ShelfZone = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 export type ProductStatus = 'moving' | 'falling';
 
 export interface ProductData {
   id: number;
+  /** id товара из `ItemRegistry` (картинка из `pages/game/images`) */
+  itemId: string;
   zone: ShelfZone;
   progress: number;
   speed: number;
@@ -50,6 +54,8 @@ const PRODUCT_SPEED = 0.35;
 const ZONES: ShelfZone[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
 
 let nextProductId = 0;
+
+const itemRegistry = ItemRegistry.getInstance();
 
 export class GameStore {
   private state: GameState;
@@ -144,8 +150,10 @@ export class GameStore {
       this.spawnTimers[zone] -= delta;
       if (this.spawnTimers[zone] <= 0) {
         this.spawnTimers[zone] = SPAWN_INTERVAL;
+        const { id: itemId } = itemRegistry.getRandomItem();
         this.state.products.push({
           id: nextProductId++,
+          itemId,
           zone,
           progress: 0,
           speed: PRODUCT_SPEED,

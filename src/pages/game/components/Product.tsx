@@ -1,7 +1,10 @@
 import { useRef } from 'react';
+import { ItemRegistry } from '../../../game/ItemRegistry';
 import { useGameStoreContext } from '../store';
 import { useGameLoop } from '../store/useGameLoop';
 import './Product.css';
+
+const registry = ItemRegistry.getInstance();
 
 export interface AnimationPoint {
   x: number;
@@ -40,5 +43,16 @@ export function Product({ productId, from, to }: ProductProps) {
     el.style.top = `${y}%`;
   });
 
-  return <div ref={ref} className="Product-root" />;
+  const product = store.getProduct(productId);
+  const item = product ? registry.getItem(product.itemId) : undefined;
+  const src = item?.imageUrl;
+  const alt = item?.name ?? 'товар';
+
+  return (
+    <div ref={ref} className="Product-root">
+      {src ? (
+        <img src={src} alt={alt} className="Product-img" draggable={false} />
+      ) : null}
+    </div>
+  );
 }
