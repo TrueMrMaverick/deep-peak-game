@@ -14,6 +14,18 @@
   object-fit: cover;
 }
 
+.GamePage-logo {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  height: clamp(120px, 30vw, 200px);
+  width: auto;
+  max-width: min(92vw, 880px);
+  object-fit: contain;
+  z-index: 10;
+  pointer-events: none;
+}
+
 .GamePage-score {
   position: absolute;
   top: 16px;
