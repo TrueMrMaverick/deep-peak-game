@@ -1,39 +1,29 @@
 import { useCallback, useRef } from 'react';
-import { ShelfZone } from '../store';
 import { useGameLoop } from '../store/useGameLoop';
 import './Product.css';
 
+export interface AnimationPoint {
+  x: number;
+  y: number;
+  scale: number;
+}
+
 interface ProductProps {
-  zone: ShelfZone;
+  from: AnimationPoint;
+  to: AnimationPoint;
   lane: number;
   speed: number;
   delay: number;
   onFinish: () => void;
 }
 
-/**
- * Direction vectors per zone — products fly FROM the vanishing point
- * (outer corner of zone) TOWARDS the viewer (center of screen).
- *
- * originX/Y: starting position inside zone (0-100 %)
- * dirX/dirY:  movement direction towards center
- */
-const ZONE_CONFIG: Record<ShelfZone, { originX: number; originY: number; dirX: number; dirY: number }> = {
-  'top-left':     { originX: 0,   originY: 0,   dirX:  1, dirY:  1 },
-  'top-right':    { originX: 100, originY: 0,   dirX: -1, dirY:  1 },
-  'bottom-left':  { originX: 0,   originY: 100, dirX:  1, dirY: -1 },
-  'bottom-right': { originX: 100, originY: 100, dirX: -1, dirY: -1 },
-};
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
 
-const START_SCALE = 0.08;
-const END_SCALE = 1.4;
-const TRAVEL = 55;
-
-export function Product({ zone, lane, speed, delay, onFinish }: ProductProps) {
+export function Product({ from, to, lane, speed, delay, onFinish }: ProductProps) {
   const ref = useRef<HTMLDivElement>(null);
   const progressRef = useRef(-delay);
-
-  const { originX, originY, dirX, dirY } = ZONE_CONFIG[zone];
 
   const tick = useCallback(
     (frame: { delta: number }) => {
@@ -54,16 +44,16 @@ export function Product({ zone, lane, speed, delay, onFinish }: ProductProps) {
       if (!el) return;
 
       const ease = t * t;
-      const scale = START_SCALE + (END_SCALE - START_SCALE) * ease;
-      const x = originX + dirX * TRAVEL * ease;
-      const y = originY + dirY * TRAVEL * ease;
+      const x = lerp(from.x, to.x, ease);
+      const y = lerp(from.y, to.y, ease) + lane;
+      const scale = lerp(from.scale, to.scale, ease);
 
-      el.style.opacity = String(Math.min(t * 4, 1));
+      el.style.opacity = '1';
       el.style.transform = `translate(-50%, -50%) scale(${scale})`;
       el.style.left = `${x}%`;
-      el.style.top = `${y + lane}%`;
+      el.style.top = `${y}%`;
     },
-    [zone, lane, speed, onFinish, originX, originY, dirX, dirY],
+    [from, to, lane, speed, onFinish],
   );
 
   useGameLoop(tick);
