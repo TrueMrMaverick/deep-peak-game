@@ -6,16 +6,17 @@ const registry = ItemRegistry.getInstance();
 
 export function OrderPanel() {
   const order = useGame((s) => s.order);
+  const orderNumber = useGame((s) => s.orderNumber);
 
   return (
     <div className='OrderPanel-root'>
-      <div className='OrderPanel-title'>Заказ</div>
+      <div className='OrderPanel-title'>Заказ #{orderNumber}</div>
       <ul className='OrderPanel-list'>
         {order.map((entry, i) => {
           const item = registry.getItem(entry.itemId);
           return (
             <li
-              key={i}
+              key={`${orderNumber}-${i}-${entry.itemId}`}
               className={`OrderPanel-item${entry.collected ? ' OrderPanel-item--collected' : ''}`}
             >
               <div className='OrderPanel-item-img-wrap'>

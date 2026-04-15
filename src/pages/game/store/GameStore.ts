@@ -26,6 +26,8 @@ export interface GameState {
   playerZone: ShelfZone;
   products: ProductData[];
   order: OrderItem[];
+  /** Номер текущего заказа для UI (после полного сбора +1 и новый заказ). */
+  orderNumber: number;
   /** Руки вверх (`courier-up`) или вниз (`courier-down`). */
   courierArmsUp: boolean;
   /** Зеркально по горизонтали: false — оригинал (стрелка вправо), true — отражение (стрелка влево). */
@@ -59,6 +61,7 @@ const INITIAL_STATE: GameState = {
   playerZone: 'top-left',
   products: [],
   order: [],
+  orderNumber: 1,
   courierArmsUp: true,
   courierMirrored: false,
 };
@@ -66,6 +69,7 @@ const INITIAL_STATE: GameState = {
 const CATCH_THRESHOLD = 0.9;
 const SCORE_HIT = 100;
 const SCORE_MISS = -100;
+const SCORE_ORDER_COMPLETE = 500;
 const ORDER_SIZE = 5;
 
 const SPAWN_INTERVAL = 1.5;
@@ -162,7 +166,7 @@ export class GameStore {
     return this.state.products.find((p) => p.id === id);
   }
 
-  generateOrder(): void {
+  private buildRandomOrder(): OrderItem[] {
     const order: OrderItem[] = [];
     for (let i = 0; i < ORDER_SIZE; i++) {
       order.push({
@@ -170,7 +174,11 @@ export class GameStore {
         collected: false,
       });
     }
-    this.state = { ...this.state, order };
+    return order;
+  }
+
+  generateOrder(): void {
+    this.state = { ...this.state, order: this.buildRandomOrder() };
     this.emit();
   }
 
@@ -199,10 +207,23 @@ export class GameStore {
     });
 
     if (changed) {
+      let nextScore = this.state.score + scoreChange;
+      let nextOrder = [...this.state.order];
+      let nextOrderNumber = this.state.orderNumber;
+
+      const orderComplete =
+        nextOrder.length > 0 && nextOrder.every((o) => o.collected);
+      if (orderComplete) {
+        nextScore += SCORE_ORDER_COMPLETE;
+        nextOrderNumber += 1;
+        nextOrder = this.buildRandomOrder();
+      }
+
       this.state = {
         ...this.state,
-        score: this.state.score + scoreChange,
-        order: [...this.state.order],
+        score: nextScore,
+        order: nextOrder,
+        orderNumber: nextOrderNumber,
       };
       for (const c of caught) {
         this.emitEvent({ type: 'caught', product: c.product, inOrder: c.inOrder });
