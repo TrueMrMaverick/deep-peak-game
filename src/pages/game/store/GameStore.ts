@@ -87,6 +87,8 @@ export class GameStore {
   private elapsedTime: number = 0;
   private _running = false;
   private spawnTimer: number = SPAWN_INTERVAL;
+  private spawnsSinceOrder: number = 0;
+  private nextOrderSpawn: number = this.randomInt(2, 5);
 
   constructor(initialState: Partial<GameState> = {}) {
     this.state = { ...INITIAL_STATE, ...initialState };
@@ -209,6 +211,23 @@ export class GameStore {
     }
   }
 
+  private pickItemId(): string {
+    this.spawnsSinceOrder++;
+    if (this.spawnsSinceOrder >= this.nextOrderSpawn) {
+      this.spawnsSinceOrder = 0;
+      this.nextOrderSpawn = this.randomInt(2, 5);
+      const uncollected = this.state.order.filter((o) => !o.collected);
+      if (uncollected.length > 0) {
+        return uncollected[Math.floor(Math.random() * uncollected.length)].itemId;
+      }
+    }
+    return itemRegistry.getRandomItem().id;
+  }
+
+  private randomInt(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
   private tickProducts(delta: number): void {
     let changed = false;
 
@@ -216,7 +235,7 @@ export class GameStore {
     if (this.spawnTimer <= 0) {
       this.spawnTimer = SPAWN_INTERVAL;
       const zone = ZONES[Math.floor(Math.random() * ZONES.length)];
-      const { id: itemId } = itemRegistry.getRandomItem();
+      const itemId = this.pickItemId();
       this.state.products.push({
         id: nextProductId++,
         itemId,
