@@ -20,6 +20,10 @@ export interface GameState {
   isRunning: boolean;
   playerZone: ShelfZone;
   products: ProductData[];
+  /** Руки вверх (`courier-up`) или вниз (`courier-down`). */
+  courierArmsUp: boolean;
+  /** Зеркально по горизонтали: false — оригинал (стрелка вправо), true — отражение (стрелка влево). */
+  courierMirrored: boolean;
 }
 
 export interface FrameInfo {
@@ -47,6 +51,8 @@ const INITIAL_STATE: GameState = {
   isRunning: false,
   playerZone: 'top-left',
   products: [],
+  courierArmsUp: true,
+  courierMirrored: false,
 };
 
 const SPAWN_INTERVAL = 1.2;
