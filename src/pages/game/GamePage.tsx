@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import './GamePage.css';
 import bg from './storage.jpg';
 import courierDown from './images/courier-down.svg';
@@ -6,15 +6,11 @@ import courierUp from './images/courier-up.svg';
 import { GameStoreProvider, useGame, useGameStoreContext } from './store';
 import { Shelves } from './components/Shelves';
 import { OrderPanel } from './OrderPanel';
-import { OrderGenerator, Order } from '../../game/OrderGenerator';
 
 function GameContent() {
   const store = useGameStoreContext();
   const courierArmsUp = useGame((s) => s.courierArmsUp);
   const courierMirrored = useGame((s) => s.courierMirrored);
-
-  const generator = useMemo(() => new OrderGenerator(4, 6), []);
-  const [order] = useState<Order>(() => generator.generate());
 
   useEffect(() => {
     store.startLoop();
@@ -75,7 +71,7 @@ function GameContent() {
       <img src={bg} alt='' className='GamePage-bg' />
       <Shelves />
       <div className='GamePage-score'>{score}</div>
-      <OrderPanel order={order} />
+      <OrderPanel />
       <div className='GamePage-courierLayer'>
         <img
           src={courierSrc}

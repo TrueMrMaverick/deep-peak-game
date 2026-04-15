@@ -13,6 +13,11 @@
   overflow: hidden;
 }
 
+.Product-root--catchable {
+  background: rgba(72, 199, 90, 0.95);
+  box-shadow: 0 0 12px rgba(72, 199, 90, 0.7);
+}
+
 .Product-img {
   width: 100%;
   height: 100%;

@@ -45,8 +45,15 @@ export function Product({ productId, from, to }: ProductProps) {
   const syncPosition = useCallback(() => {
     const el = ref.current;
     if (!el) return;
-    paintProductPosition(el, store.getProduct(productId), from, to);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- from/to: только поля (объекты с Shelves каждый рендер новые)
+    const product = store.getProduct(productId);
+    paintProductPosition(el, product, from, to);
+
+    if (product) {
+      const { playerZone } = store.getState();
+      const catchable = product.zone === playerZone && product.progress >= 0.9;
+      el.classList.toggle('Product-root--catchable', catchable);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, productId, from.x, from.y, from.scale, to.x, to.y, to.scale]);
 
   /** До первого кадра RAF left/top не выставлялись → «статическая» позиция (часто центр ячейки). */

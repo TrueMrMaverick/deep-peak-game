@@ -68,7 +68,7 @@ const SCORE_HIT = 100;
 const SCORE_MISS = -100;
 const ORDER_SIZE = 5;
 
-const SPAWN_INTERVAL = 1.2;
+const SPAWN_INTERVAL = 1.5;
 const PRODUCT_SPEED = 0.35;
 const ZONES: ShelfZone[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
 
@@ -86,12 +86,7 @@ export class GameStore {
   private lastTimestamp: number = 0;
   private elapsedTime: number = 0;
   private _running = false;
-  private spawnTimers: Record<ShelfZone, number> = {
-    'top-left': SPAWN_INTERVAL,
-    'top-right': SPAWN_INTERVAL,
-    'bottom-left': SPAWN_INTERVAL,
-    'bottom-right': SPAWN_INTERVAL,
-  };
+  private spawnTimer: number = SPAWN_INTERVAL;
 
   constructor(initialState: Partial<GameState> = {}) {
     this.state = { ...INITIAL_STATE, ...initialState };
@@ -202,7 +197,11 @@ export class GameStore {
     });
 
     if (changed) {
-      this.state.score += scoreChange;
+      this.state = {
+        ...this.state,
+        score: this.state.score + scoreChange,
+        order: [...this.state.order],
+      };
       for (const c of caught) {
         this.emitEvent({ type: 'caught', product: c.product, inOrder: c.inOrder });
       }
@@ -213,21 +212,20 @@ export class GameStore {
   private tickProducts(delta: number): void {
     let changed = false;
 
-    for (const zone of ZONES) {
-      this.spawnTimers[zone] -= delta;
-      if (this.spawnTimers[zone] <= 0) {
-        this.spawnTimers[zone] = SPAWN_INTERVAL;
-        const { id: itemId } = itemRegistry.getRandomItem();
-        this.state.products.push({
-          id: nextProductId++,
-          itemId,
-          zone,
-          progress: 0,
-          speed: PRODUCT_SPEED,
-          status: 'moving',
-        });
-        changed = true;
-      }
+    this.spawnTimer -= delta;
+    if (this.spawnTimer <= 0) {
+      this.spawnTimer = SPAWN_INTERVAL;
+      const zone = ZONES[Math.floor(Math.random() * ZONES.length)];
+      const { id: itemId } = itemRegistry.getRandomItem();
+      this.state.products.push({
+        id: nextProductId++,
+        itemId,
+        zone,
+        progress: 0,
+        speed: PRODUCT_SPEED,
+        status: 'moving',
+      });
+      changed = true;
     }
 
     const falling: ProductData[] = [];
