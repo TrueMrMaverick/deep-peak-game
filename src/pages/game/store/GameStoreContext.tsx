@@ -26,5 +26,7 @@ export function useGame(): GameState;
 export function useGame<T>(selector: (state: GameState) => T): T;
 export function useGame<T>(selector?: (state: GameState) => T): T | GameState {
   const store = useGameStoreContext();
-  return selector ? useGameStore(store, selector) : useGameStore(store);
+  const identity = (s: GameState): GameState => s;
+  const effectiveSelector = (selector ?? identity) as (s: GameState) => T | GameState;
+  return useGameStore(store, effectiveSelector);
 }
