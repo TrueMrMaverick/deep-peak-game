@@ -1,4 +1,5 @@
-import { useCallback, useRef } from 'react';
+import { useRef } from 'react';
+import { useGameStoreContext } from '../store';
 import { useGameLoop } from '../store/useGameLoop';
 import './Product.css';
 
@@ -9,54 +10,35 @@ export interface AnimationPoint {
 }
 
 interface ProductProps {
+  productId: number;
   from: AnimationPoint;
   to: AnimationPoint;
-  lane: number;
-  speed: number;
-  delay: number;
-  onFinish: () => void;
 }
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
-export function Product({ from, to, lane, speed, delay, onFinish }: ProductProps) {
+export function Product({ productId, from, to }: ProductProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const progressRef = useRef(-delay);
+  const store = useGameStoreContext();
 
-  const tick = useCallback(
-    (frame: { delta: number }) => {
-      progressRef.current += frame.delta * speed;
-      const t = progressRef.current;
+  useGameLoop(() => {
+    const el = ref.current;
+    if (!el) return;
 
-      if (t < 0) {
-        if (ref.current) ref.current.style.opacity = '0';
-        return;
-      }
+    const product = store.getProduct(productId);
+    if (!product) return;
 
-      if (t >= 1) {
-        onFinish();
-        return;
-      }
+    const t = Math.min(Math.max(product.progress, 0), 1);
+    const x = lerp(from.x, to.x, t);
+    const y = lerp(from.y, to.y, t);
+    const scale = lerp(from.scale, to.scale, t);
 
-      const el = ref.current;
-      if (!el) return;
+    el.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    el.style.left = `${x}%`;
+    el.style.top = `${y}%`;
+  });
 
-      const ease = t * t;
-      const x = lerp(from.x, to.x, ease);
-      const y = lerp(from.y, to.y, ease) + lane;
-      const scale = lerp(from.scale, to.scale, ease);
-
-      el.style.opacity = '1';
-      el.style.transform = `translate(-50%, -50%) scale(${scale})`;
-      el.style.left = `${x}%`;
-      el.style.top = `${y}%`;
-    },
-    [from, to, lane, speed, onFinish],
-  );
-
-  useGameLoop(tick);
-
-  return <div ref={ref} className="Product-root" style={{ opacity: 0 }} />;
+  return <div ref={ref} className="Product-root" />;
 }

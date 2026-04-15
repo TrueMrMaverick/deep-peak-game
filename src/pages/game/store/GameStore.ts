@@ -1,10 +1,21 @@
 export type ShelfZone = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
+export type ProductStatus = 'moving' | 'falling';
+
+export interface ProductData {
+  id: number;
+  zone: ShelfZone;
+  progress: number;
+  speed: number;
+  status: ProductStatus;
+}
+
 export interface GameState {
   score: number;
   level: number;
   isRunning: boolean;
   playerZone: ShelfZone;
+  products: ProductData[];
 }
 
 export interface FrameInfo {
@@ -15,6 +26,15 @@ export interface FrameInfo {
 
 export type TickCallback = (frame: FrameInfo, store: GameStore) => void;
 
+export type GameEventType = 'falling';
+
+export interface GameEvent {
+  type: GameEventType;
+  product: ProductData;
+}
+
+export type GameEventListener = (event: GameEvent) => void;
+
 type Listener = () => void;
 
 const INITIAL_STATE: GameState = {
@@ -22,17 +42,31 @@ const INITIAL_STATE: GameState = {
   level: 1,
   isRunning: false,
   playerZone: 'top-left',
+  products: [],
 };
+
+const SPAWN_INTERVAL = 1.2;
+const PRODUCT_SPEED = 0.35;
+const ZONES: ShelfZone[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+
+let nextProductId = 0;
 
 export class GameStore {
   private state: GameState;
   private listeners = new Set<Listener>();
+  private eventListeners = new Map<GameEventType, Set<GameEventListener>>();
 
   private tickCallbacks = new Set<TickCallback>();
   private rafId: number | null = null;
   private lastTimestamp: number = 0;
   private elapsedTime: number = 0;
   private _running = false;
+  private spawnTimers: Record<ShelfZone, number> = {
+    'top-left': SPAWN_INTERVAL,
+    'top-right': SPAWN_INTERVAL,
+    'bottom-left': SPAWN_INTERVAL,
+    'bottom-right': SPAWN_INTERVAL,
+  };
 
   constructor(initialState: Partial<GameState> = {}) {
     this.state = { ...INITIAL_STATE, ...initialState };
@@ -85,6 +119,64 @@ export class GameStore {
     return this._running;
   }
 
+  on(type: GameEventType, listener: GameEventListener): () => void {
+    let set = this.eventListeners.get(type);
+    if (!set) {
+      set = new Set();
+      this.eventListeners.set(type, set);
+    }
+    set.add(listener);
+    return () => { set!.delete(listener); };
+  }
+
+  private emitEvent(event: GameEvent): void {
+    this.eventListeners.get(event.type)?.forEach((l) => l(event));
+  }
+
+  getProduct(id: number): ProductData | undefined {
+    return this.state.products.find((p) => p.id === id);
+  }
+
+  private tickProducts(delta: number): void {
+    let changed = false;
+
+    for (const zone of ZONES) {
+      this.spawnTimers[zone] -= delta;
+      if (this.spawnTimers[zone] <= 0) {
+        this.spawnTimers[zone] = SPAWN_INTERVAL;
+        this.state.products.push({
+          id: nextProductId++,
+          zone,
+          progress: 0,
+          speed: PRODUCT_SPEED,
+          status: 'moving',
+        });
+        changed = true;
+      }
+    }
+
+    const falling: ProductData[] = [];
+
+    const before = this.state.products.length;
+    this.state.products = this.state.products.filter((p) => {
+      if (p.status !== 'moving') return false;
+      p.progress += delta * p.speed;
+      if (p.progress >= 1) {
+        p.status = 'falling';
+        falling.push(p);
+        return false;
+      }
+      return true;
+    });
+    if (this.state.products.length !== before) changed = true;
+
+    for (const p of falling) {
+      this.emitEvent({ type: 'falling', product: p });
+    }
+
+    if (changed) this.emit();
+  }
+
   private tick = (timestamp: number): void => {
     if (!this._running) return;
 
@@ -102,6 +194,7 @@ export class GameStore {
       timestamp,
     };
 
+    this.tickProducts(delta);
     this.tickCallbacks.forEach((cb) => cb(frame, this));
 
     this.rafId = requestAnimationFrame(this.tick);
