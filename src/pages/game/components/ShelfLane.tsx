@@ -23,18 +23,10 @@ const ZONE_DEFAULTS: Record<ShelfZone, { from: AnimationPoint; to: AnimationPoin
   'bottom-right': { from: { x: 0,   y: 0,   scale: 0.08 }, to: { x: 55,  y: 55,  scale: 1.4 } },
 };
 
-const SPAWN_INTERVAL_MIN = 0.8;
-const SPAWN_INTERVAL_MAX = 2.0;
-const SPEED_MIN = 0.25;
-const SPEED_MAX = 0.5;
-const LANE_MIN = -15;
-const LANE_MAX = 15;
+const SPAWN_INTERVAL = 1.2;
+const SPEED = 0.35;
 
 let nextId = 0;
-
-function rand(min: number, max: number) {
-  return min + Math.random() * (max - min);
-}
 
 export function ShelfLane({ zone, from, to }: ShelfLaneProps) {
   const defaults = ZONE_DEFAULTS[zone];
@@ -42,17 +34,17 @@ export function ShelfLane({ zone, from, to }: ShelfLaneProps) {
   const resolvedTo = to ?? defaults.to;
 
   const [products, setProducts] = useState<SpawnedProduct[]>([]);
-  const nextSpawnRef = useRef(rand(0, SPAWN_INTERVAL_MIN));
+  const nextSpawnRef = useRef(SPAWN_INTERVAL);
 
   const spawnTick = useCallback(
     (frame: { delta: number }) => {
       nextSpawnRef.current -= frame.delta;
       if (nextSpawnRef.current <= 0) {
-        nextSpawnRef.current = rand(SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_MAX);
+        nextSpawnRef.current = SPAWN_INTERVAL;
         const product: SpawnedProduct = {
           id: nextId++,
-          lane: rand(LANE_MIN, LANE_MAX),
-          speed: rand(SPEED_MIN, SPEED_MAX),
+          lane: 0,
+          speed: SPEED,
           delay: 0,
         };
         setProducts((prev) => [...prev, product]);

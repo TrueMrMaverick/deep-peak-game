@@ -66,8 +66,8 @@ export function Shelves() {
       <div className={zoneClass('top-left', playerZone)}>
         <ShelfLane
           zone="top-left"
-          from={{ x: 60, y: 80, scale: 0.5 }}
-          to={{ x: 20, y: 80, scale: 1.4 }}
+          to={{ x: 60, y: 80, scale: 0.5 }}
+          from={{ x: 20, y: 80, scale: 1.4 }}
         />
       </div>
       <div className={zoneClass('top-right', playerZone)}>

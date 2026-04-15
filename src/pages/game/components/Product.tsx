@@ -43,10 +43,9 @@ export function Product({ from, to, lane, speed, delay, onFinish }: ProductProps
       const el = ref.current;
       if (!el) return;
 
-      const ease = t * t;
-      const x = lerp(from.x, to.x, ease);
-      const y = lerp(from.y, to.y, ease) + lane;
-      const scale = lerp(from.scale, to.scale, ease);
+      const x = lerp(from.x, to.x, t);
+      const y = lerp(from.y, to.y, t) + lane;
+      const scale = lerp(from.scale, to.scale, t);
 
       el.style.opacity = '1';
       el.style.transform = `translate(-50%, -50%) scale(${scale})`;
