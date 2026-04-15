@@ -67,7 +67,7 @@ export function Shelves() {
         <ShelfLane
           zone="top-left"
           to={{ x: 60, y: 80, scale: 0.5 }}
-          from={{ x: 20, y: 80, scale: 1.4 }}
+          from={{ x: 30, y: 70, scale: 1.4 }}
         />
       </div>
       <div className={zoneClass('top-right', playerZone)}>
