@@ -49,9 +49,7 @@ export function Product({ productId, from, to }: ProductProps) {
     paintProductPosition(el, product, from, to);
 
     if (product) {
-      const { playerZone } = store.getState();
-      const catchable = product.zone === playerZone && product.progress >= 0.9;
-      el.classList.toggle('Product-root--catchable', catchable);
+      el.classList.toggle('Product-root--catchable', product.status === 'catchable');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, productId, from.x, from.y, from.scale, to.x, to.y, to.scale]);
