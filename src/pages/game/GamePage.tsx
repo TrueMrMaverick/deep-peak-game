@@ -1,23 +1,29 @@
-import { useMemo, useState } from 'react';
+import { useEffect } from 'react';
 import './GamePage.css';
 import bg from './storage.jpg';
-import { GameStoreProvider } from './store';
-import { OrderPanel } from './OrderPanel';
-import { OrderGenerator, Order } from '../../game/OrderGenerator';
+import { GameStoreProvider, useGameStoreContext } from './store';
+import { Shelves } from './components/Shelves';
 
-interface GamePageProps {}
+function GameContent() {
+  const store = useGameStoreContext();
 
-export function GamePage(props: GamePageProps) {
-  const generator = useMemo(() => new OrderGenerator(4, 6), []);
-
-  const [order] = useState<Order>(() => generator.generate());
+  useEffect(() => {
+    store.startLoop();
+    return () => store.stopLoop();
+  }, [store]);
 
   return (
+    <div className='GamePage-root'>
+      <img src={bg} alt='bg' className='GamePage-bg'/>
+      <Shelves />
+    </div>
+  );
+}
+
+export function GamePage() {
+  return (
     <GameStoreProvider>
-      <div className='GamePage-root'>
-        <img src={bg} alt='bg' className='GamePage-bg' />
-        <OrderPanel order={order} />
-      </div>
+      <GameContent />
     </GameStoreProvider>
   );
 }

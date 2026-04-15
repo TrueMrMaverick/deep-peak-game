@@ -1,7 +1,10 @@
+export type ShelfZone = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+
 export interface GameState {
   score: number;
   level: number;
   isRunning: boolean;
+  playerZone: ShelfZone;
 }
 
 export interface FrameInfo {
@@ -18,6 +21,7 @@ const INITIAL_STATE: GameState = {
   score: 0,
   level: 1,
   isRunning: false,
+  playerZone: 'top-left',
 };
 
 export class GameStore {
