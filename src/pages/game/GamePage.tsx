@@ -6,6 +6,7 @@ import courierUp from './images/courier-up.svg';
 import { GameStoreProvider, useGame, useGameStoreContext, ShelfZone } from './store';
 import { Shelves } from './components/Shelves';
 import { OrderPanel } from './OrderPanel';
+import { GameOverScreen } from './GameOverScreen';
 
 const KEY_TO_ACTION: Record<string, 'up' | 'down' | 'left' | 'right'> = {
   ArrowUp: 'up',
@@ -34,6 +35,7 @@ function GameContent() {
   const store = useGameStoreContext();
   const courierArmsUp = useGame((s) => s.courierArmsUp);
   const courierMirrored = useGame((s) => s.courierMirrored);
+  const gameOver = useGame((s) => s.gameOver);
 
   useEffect(() => {
     store.startLoop();
@@ -86,6 +88,7 @@ function GameContent() {
           style={{ transform: courierTransform }}
         />
       </div>
+      {gameOver && <GameOverScreen />}
     </div>
   );
 }

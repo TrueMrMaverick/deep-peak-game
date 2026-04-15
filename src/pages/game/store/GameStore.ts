@@ -32,6 +32,12 @@ export interface GameState {
   courierArmsUp: boolean;
   /** Зеркально по горизонтали: false — оригинал (стрелка вправо), true — отражение (стрелка влево). */
   courierMirrored: boolean;
+  /** Оставшееся время на сборку текущего заказа (секунды). */
+  orderTimeLeft: number;
+  /** Игра завершена (время вышло). */
+  gameOver: boolean;
+  /** Количество успешно собранных заказов. */
+  ordersCompleted: number;
 }
 
 export interface FrameInfo {
@@ -54,6 +60,8 @@ export type GameEventListener = (event: GameEvent) => void;
 
 type Listener = () => void;
 
+const ORDER_TIME_LIMIT = 45; // секунд на сборку одного заказа
+
 const INITIAL_STATE: GameState = {
   score: 0,
   level: 1,
@@ -64,6 +72,9 @@ const INITIAL_STATE: GameState = {
   orderNumber: 1,
   courierArmsUp: true,
   courierMirrored: false,
+  orderTimeLeft: ORDER_TIME_LIMIT,
+  gameOver: false,
+  ordersCompleted: 0,
 };
 
 const CATCH_THRESHOLD = 0.9;
@@ -194,20 +205,44 @@ export class GameStore {
     this.emit();
   }
 
+  private tickTimer(delta: number): void {
+    if (this.state.gameOver) return;
+
+    const newTimeLeft = this.state.orderTimeLeft - delta;
+    if (newTimeLeft <= 0) {
+      // Время вышло — game over
+      this.state = {
+        ...this.state,
+        orderTimeLeft: 0,
+        gameOver: true,
+        isRunning: false,
+      };
+      this.stopLoop();
+      this.emit();
+    } else {
+      this.state = { ...this.state, orderTimeLeft: newTimeLeft };
+      this.emit();
+    }
+  }
+
   private tickCatch(): void {
-    const { playerZone, products, order } = this.state;
+    if (this.state.gameOver) return;
+
+    const { playerZone, order } = this.state;
+    const products = this.state.products;
     let scoreChange = 0;
     let changed = false;
     const caught: Array<{ product: ProductData; inOrder: boolean }> = [];
+    const collectedItemIds: string[] = [];
 
-    this.state.products = products.filter((p) => {
+    const nextProducts = products.filter((p) => {
       if (p.zone !== playerZone || p.progress < CATCH_THRESHOLD) return true;
 
       const orderEntry = order.find((o) => o.itemId === p.itemId && !o.collected);
       const inOrder = !!orderEntry;
 
       if (inOrder) {
-        orderEntry!.collected = true;
+        collectedItemIds.push(p.itemId);
         scoreChange += SCORE_HIT;
       } else {
         scoreChange += SCORE_MISS;
@@ -220,22 +255,41 @@ export class GameStore {
 
     if (changed) {
       let nextScore = this.state.score + scoreChange;
-      let nextOrder = [...this.state.order];
+
+      const pendingIds = [...collectedItemIds];
+      let nextOrder = order.map((o) => {
+        if (!o.collected) {
+          const idx = pendingIds.indexOf(o.itemId);
+          if (idx !== -1) {
+            pendingIds.splice(idx, 1);
+            return { ...o, collected: true };
+          }
+        }
+        return o;
+      });
+
       let nextOrderNumber = this.state.orderNumber;
+      let nextOrdersCompleted = this.state.ordersCompleted;
+      let nextTimeLeft = this.state.orderTimeLeft;
 
       const orderComplete =
         nextOrder.length > 0 && nextOrder.every((o) => o.collected);
       if (orderComplete) {
         nextScore += SCORE_ORDER_COMPLETE;
         nextOrderNumber += 1;
+        nextOrdersCompleted += 1;
+        nextTimeLeft = ORDER_TIME_LIMIT; // сбрасываем таймер
         nextOrder = this.buildRandomOrder();
       }
 
       this.state = {
         ...this.state,
+        products: nextProducts,
         score: nextScore,
         order: nextOrder,
         orderNumber: nextOrderNumber,
+        ordersCompleted: nextOrdersCompleted,
+        orderTimeLeft: nextTimeLeft,
       };
       for (const c of caught) {
         this.emitEvent({ type: 'caught', product: c.product, inOrder: c.inOrder });
@@ -283,17 +337,21 @@ export class GameStore {
     const falling: ProductData[] = [];
 
     const before = this.state.products.length;
-    this.state.products = this.state.products.filter((p) => {
-      if (p.status !== 'moving') return false;
-      p.progress += delta * p.speed;
-      if (p.progress >= 1) {
-        p.status = 'falling';
-        falling.push(p);
-        return false;
-      }
-      return true;
-    });
-    if (this.state.products.length !== before) changed = true;
+    const nextProducts = this.state.products
+      .filter((p) => p.status === 'moving')
+      .map((p) => {
+        const newProgress = p.progress + delta * p.speed;
+        if (newProgress >= 1) {
+          falling.push({ ...p, status: 'falling' as ProductStatus });
+          return null;
+        }
+        return { ...p, progress: newProgress };
+      })
+      .filter((p): p is ProductData => p !== null);
+
+    if (nextProducts.length !== before) changed = true;
+
+    this.state = { ...this.state, products: nextProducts };
 
     for (const p of falling) {
       this.emitEvent({ type: 'falling', product: p });
@@ -319,6 +377,7 @@ export class GameStore {
       timestamp,
     };
 
+    this.tickTimer(delta);
     this.tickProducts(delta);
     this.tickCatch();
     this.tickCallbacks.forEach((cb) => cb(frame, this));
