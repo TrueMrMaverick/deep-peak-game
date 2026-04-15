@@ -1,5 +1,6 @@
 import './GamePage.css';
 import bg from './storage.jpg';
+import { GameStoreProvider } from './store';
 
 interface GamePageProps {
 
@@ -8,8 +9,10 @@ interface GamePageProps {
 export function GamePage(props: GamePageProps) {
 
   return (
-  <div className='GamePage-root'>
-      <img src={bg} alt='bg' className='GamePage-bg'/>
-    </div>
+    <GameStoreProvider>
+      <div className='GamePage-root'>
+        <img src={bg} alt='bg' className='GamePage-bg'/>
+      </div>
+    </GameStoreProvider>
   );
 }
