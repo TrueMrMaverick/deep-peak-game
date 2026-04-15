@@ -70,6 +70,7 @@ const CATCH_THRESHOLD = 0.9;
 const SCORE_HIT = 100;
 const SCORE_MISS = -100;
 const SCORE_ORDER_COMPLETE = 500;
+/** Сколько позиций в одном заказе: все разные, каждый раз новый случайный набор из каталога. */
 const ORDER_SIZE = 5;
 
 const SPAWN_INTERVAL = 1.5;
@@ -166,15 +167,26 @@ export class GameStore {
     return this.state.products.find((p) => p.id === id);
   }
 
-  private buildRandomOrder(): OrderItem[] {
-    const order: OrderItem[] = [];
-    for (let i = 0; i < ORDER_SIZE; i++) {
-      order.push({
-        itemId: itemRegistry.getRandomItem().id,
-        collected: false,
-      });
+  /**
+   * Выбирает `count` **разных** товаров из полного списка реестра.
+   * Каждый вызов заново перемешивает каталог — следующий заказ снова из тех же id,
+   * но свой случайный набор; повторы одного товара внутри одного заказа невозможны.
+   */
+  private pickUniqueRandomItemIds(count: number): string[] {
+    const pool = itemRegistry.getAllItems().map((item) => item.id);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
     }
-    return order;
+    const take = Math.min(count, pool.length);
+    return pool.slice(0, take);
+  }
+
+  private buildRandomOrder(): OrderItem[] {
+    return this.pickUniqueRandomItemIds(ORDER_SIZE).map((itemId) => ({
+      itemId,
+      collected: false,
+    }));
   }
 
   generateOrder(): void {
