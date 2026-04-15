@@ -1,11 +1,34 @@
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import './GamePage.css';
 import bg from './storage.jpg';
 import courierDown from './images/courier-down.svg';
 import courierUp from './images/courier-up.svg';
-import { GameStoreProvider, useGame, useGameStoreContext } from './store';
+import { GameStoreProvider, useGame, useGameStoreContext, ShelfZone } from './store';
 import { Shelves } from './components/Shelves';
 import { OrderPanel } from './OrderPanel';
+
+const KEY_TO_ACTION: Record<string, 'up' | 'down' | 'left' | 'right'> = {
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  w: 'up', W: 'up',
+  s: 'down', S: 'down',
+  a: 'left', A: 'left',
+  d: 'right', D: 'right',
+  // русская раскладка
+  ц: 'up', Ц: 'up',
+  ы: 'down', Ы: 'down',
+  ф: 'left', Ф: 'left',
+  в: 'right', В: 'right',
+};
+
+function deriveZone(armsUp: boolean, mirrored: boolean): ShelfZone {
+  if (armsUp && !mirrored) return 'top-right';
+  if (armsUp && mirrored) return 'top-left';
+  if (!armsUp && !mirrored) return 'bottom-right';
+  return 'bottom-left';
+}
 
 function GameContent() {
   const store = useGameStoreContext();
@@ -17,49 +40,32 @@ function GameContent() {
     return () => store.stopLoop();
   }, [store]);
 
-  const onArrowUp = useCallback(() => {
-    store.update({ courierArmsUp: false });
-  }, [store]);
-
-  const onArrowDown = useCallback(() => {
-    store.update({ courierArmsUp: true });
-  }, [store]);
-
-  /** Влево — без отражения, вправо — зеркально */
-  const onArrowLeft = useCallback(() => {
-    store.update({ courierMirrored: false });
-  }, [store]);
-
-  const onArrowRight = useCallback(() => {
-    store.update({ courierMirrored: true });
-  }, [store]);
-
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case 'ArrowUp':
-          e.preventDefault();
-          onArrowUp();
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          onArrowDown();
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          onArrowLeft();
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          onArrowRight();
-          break;
-        default:
-          break;
+      const action = KEY_TO_ACTION[e.key];
+      if (!action) return;
+      e.preventDefault();
+
+      const { courierArmsUp: arms, courierMirrored: mirror } = store.getState();
+      let newArms = arms;
+      let newMirror = mirror;
+
+      switch (action) {
+        case 'up':    newArms = false; break;
+        case 'down':  newArms = true; break;
+        case 'left':  newMirror = true; break;
+        case 'right': newMirror = false; break;
       }
+
+      store.update({
+        courierArmsUp: newArms,
+        courierMirrored: newMirror,
+        playerZone: deriveZone(newArms, newMirror),
+      });
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onArrowUp, onArrowDown, onArrowLeft, onArrowRight]);
+  }, [store]);
 
   const courierSrc = courierArmsUp ? courierUp : courierDown;
   const courierTransform = `scaleX(${courierMirrored ? -1 : 1})`;
