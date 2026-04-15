@@ -66,29 +66,29 @@ export function Shelves() {
       <div className={zoneClass('top-left', playerZone)}>
         <ShelfLane
           zone="top-left"
-          to={{ x: 60, y: 80, scale: 0.5 }}
-          from={{ x: 30, y: 70, scale: 1.4 }}
+          to={{ x: 60, y: 80, scale: 1 }}
+          from={{ x: 10, y: 70, scale: 5 }}
         />
       </div>
       <div className={zoneClass('top-right', playerZone)}>
         <ShelfLane
           zone="top-right"
-          from={{ x: 0, y: 100, scale: 0.08 }}
-          to={{ x: 55, y: 45, scale: 1.4 }}
+          from={{ x: 90, y: 70, scale: 5 }}
+          to={{ x: 20, y: 80, scale: 1 }}
         />
       </div>
       <div className={zoneClass('bottom-left', playerZone)}>
         <ShelfLane
           zone="bottom-left"
-          from={{ x: 100, y: 0, scale: 0.08 }}
-          to={{ x: 45, y: 55, scale: 1.4 }}
+          from={{ x: 10, y: 90, scale: 5 }}
+          to={{ x: 65, y: 25, scale: 1 }}
         />
       </div>
       <div className={zoneClass('bottom-right', playerZone)}>
         <ShelfLane
           zone="bottom-right"
-          from={{ x: 0, y: 0, scale: 0.08 }}
-          to={{ x: 55, y: 55, scale: 1.4 }}
+          from={{ x: 90, y: 90, scale: 5 }}
+          to={{ x: 35, y: 25, scale: 1 }}
         />
       </div>
     </div>
