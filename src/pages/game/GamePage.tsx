@@ -68,10 +68,13 @@ function GameContent() {
   const courierSrc = courierArmsUp ? courierUp : courierDown;
   const courierTransform = `scaleX(${courierMirrored ? -1 : 1})`;
 
+  const score = useGame((s) => s.score);
+
   return (
     <div className='GamePage-root'>
       <img src={bg} alt='' className='GamePage-bg' />
       <Shelves />
+      <div className='GamePage-score'>{score}</div>
       <OrderPanel order={order} />
       <div className='GamePage-courierLayer'>
         <img
