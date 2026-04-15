@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import { ItemRegistry } from '../../../game/ItemRegistry';
 import { useGameStoreContext } from '../store';
 import { useGameLoop } from '../store/useGameLoop';
@@ -22,26 +22,39 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
+function paintProductPosition(
+  el: HTMLElement,
+  product: { progress: number } | undefined,
+  from: AnimationPoint,
+  to: AnimationPoint,
+) {
+  if (!product) return;
+  const t = Math.min(Math.max(product.progress, 0), 1);
+  const x = lerp(from.x, to.x, t);
+  const y = lerp(from.y, to.y, t);
+  const scale = lerp(from.scale, to.scale, t);
+  el.style.left = `${x}%`;
+  el.style.top = `${y}%`;
+  el.style.transform = `translate(-50%, -50%) scale(${scale})`;
+}
+
 export function Product({ productId, from, to }: ProductProps) {
   const ref = useRef<HTMLDivElement>(null);
   const store = useGameStoreContext();
 
-  useGameLoop(() => {
+  const syncPosition = useCallback(() => {
     const el = ref.current;
     if (!el) return;
+    paintProductPosition(el, store.getProduct(productId), from, to);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- from/to: только поля (объекты с Shelves каждый рендер новые)
+  }, [store, productId, from.x, from.y, from.scale, to.x, to.y, to.scale]);
 
-    const product = store.getProduct(productId);
-    if (!product) return;
+  /** До первого кадра RAF left/top не выставлялись → «статическая» позиция (часто центр ячейки). */
+  useLayoutEffect(() => {
+    syncPosition();
+  }, [syncPosition]);
 
-    const t = Math.min(Math.max(product.progress, 0), 1);
-    const x = lerp(from.x, to.x, t);
-    const y = lerp(from.y, to.y, t);
-    const scale = lerp(from.scale, to.scale, t);
-
-    el.style.transform = `translate(-50%, -50%) scale(${scale})`;
-    el.style.left = `${x}%`;
-    el.style.top = `${y}%`;
-  });
+  useGameLoop(syncPosition);
 
   const product = store.getProduct(productId);
   const item = product ? registry.getItem(product.itemId) : undefined;
