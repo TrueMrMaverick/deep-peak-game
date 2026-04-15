@@ -2,7 +2,7 @@ import { ItemRegistry } from '../../../game/ItemRegistry';
 
 export type ShelfZone = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
-export type ProductStatus = 'moving' | 'falling';
+export type ProductStatus = 'moving' | 'catchable' | 'falling';
 
 export interface ProductData {
   id: number;
@@ -26,11 +26,8 @@ export interface GameState {
   playerZone: ShelfZone;
   products: ProductData[];
   order: OrderItem[];
-  /** Номер текущего заказа для UI (после полного сбора +1 и новый заказ). */
   orderNumber: number;
-  /** Руки вверх (`courier-up`) или вниз (`courier-down`). */
   courierArmsUp: boolean;
-  /** Зеркально по горизонтали: false — оригинал (стрелка вправо), true — отражение (стрелка влево). */
   courierMirrored: boolean;
 }
 
@@ -41,16 +38,6 @@ export interface FrameInfo {
 }
 
 export type TickCallback = (frame: FrameInfo, store: GameStore) => void;
-
-export type GameEventType = 'falling' | 'caught';
-
-export interface GameEvent {
-  type: GameEventType;
-  product: ProductData;
-  inOrder?: boolean;
-}
-
-export type GameEventListener = (event: GameEvent) => void;
 
 type Listener = () => void;
 
@@ -70,7 +57,6 @@ const CATCH_THRESHOLD = 0.9;
 const SCORE_HIT = 100;
 const SCORE_MISS = -100;
 const SCORE_ORDER_COMPLETE = 500;
-/** Сколько позиций в одном заказе: все разные, каждый раз новый случайный набор из каталога. */
 const ORDER_SIZE = 5;
 
 const SPAWN_INTERVAL = 1.5;
@@ -84,7 +70,6 @@ const itemRegistry = ItemRegistry.getInstance();
 export class GameStore {
   private state: GameState;
   private listeners = new Set<Listener>();
-  private eventListeners = new Map<GameEventType, Set<GameEventListener>>();
 
   private tickCallbacks = new Set<TickCallback>();
   private rafId: number | null = null;
@@ -105,6 +90,9 @@ export class GameStore {
 
   update(partial: Partial<GameState>): void {
     this.state = { ...this.state, ...partial };
+    if (partial.playerZone !== undefined) {
+      console.log('[GameStore] playerZone:', partial.playerZone);
+    }
     this.emit();
   }
 
@@ -149,40 +137,20 @@ export class GameStore {
     return this._running;
   }
 
-  on(type: GameEventType, listener: GameEventListener): () => void {
-    let set = this.eventListeners.get(type);
-    if (!set) {
-      set = new Set();
-      this.eventListeners.set(type, set);
-    }
-    set.add(listener);
-    return () => { set!.delete(listener); };
-  }
-
-  private emitEvent(event: GameEvent): void {
-    this.eventListeners.get(event.type)?.forEach((l) => l(event));
-  }
-
   getProduct(id: number): ProductData | undefined {
     return this.state.products.find((p) => p.id === id);
   }
 
-  /**
-   * Выбирает `count` **разных** товаров из полного списка реестра.
-   * Каждый вызов заново перемешивает каталог — следующий заказ снова из тех же id,
-   * но свой случайный набор; повторы одного товара внутри одного заказа невозможны.
-   */
   private pickUniqueRandomItemIds(count: number): string[] {
     const pool = itemRegistry.getAllItems().map((item) => item.id);
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
-    const take = Math.min(count, pool.length);
-    return pool.slice(0, take);
+    return pool.slice(0, Math.min(count, pool.length));
   }
 
-  private buildRandomOrder(): OrderItem[] {
+  buildRandomOrder(): OrderItem[] {
     return this.pickUniqueRandomItemIds(ORDER_SIZE).map((itemId) => ({
       itemId,
       collected: false,
@@ -192,56 +160,6 @@ export class GameStore {
   generateOrder(): void {
     this.state = { ...this.state, order: this.buildRandomOrder() };
     this.emit();
-  }
-
-  private tickCatch(): void {
-    const { playerZone, products, order } = this.state;
-    let scoreChange = 0;
-    let changed = false;
-    const caught: Array<{ product: ProductData; inOrder: boolean }> = [];
-
-    this.state.products = products.filter((p) => {
-      if (p.zone !== playerZone || p.progress < CATCH_THRESHOLD) return true;
-
-      const orderEntry = order.find((o) => o.itemId === p.itemId && !o.collected);
-      const inOrder = !!orderEntry;
-
-      if (inOrder) {
-        orderEntry!.collected = true;
-        scoreChange += SCORE_HIT;
-      } else {
-        scoreChange += SCORE_MISS;
-      }
-
-      caught.push({ product: { ...p }, inOrder });
-      changed = true;
-      return false;
-    });
-
-    if (changed) {
-      let nextScore = this.state.score + scoreChange;
-      let nextOrder = [...this.state.order];
-      let nextOrderNumber = this.state.orderNumber;
-
-      const orderComplete =
-        nextOrder.length > 0 && nextOrder.every((o) => o.collected);
-      if (orderComplete) {
-        nextScore += SCORE_ORDER_COMPLETE;
-        nextOrderNumber += 1;
-        nextOrder = this.buildRandomOrder();
-      }
-
-      this.state = {
-        ...this.state,
-        score: nextScore,
-        order: nextOrder,
-        orderNumber: nextOrderNumber,
-      };
-      for (const c of caught) {
-        this.emitEvent({ type: 'caught', product: c.product, inOrder: c.inOrder });
-      }
-      this.emit();
-    }
   }
 
   private pickItemId(): string {
@@ -280,23 +198,48 @@ export class GameStore {
       changed = true;
     }
 
-    const falling: ProductData[] = [];
+    const { playerZone, order } = this.state;
+    let scoreChange = 0;
+    let hasCatch = false;
 
     const before = this.state.products.length;
     this.state.products = this.state.products.filter((p) => {
-      if (p.status !== 'moving') return false;
       p.progress += delta * p.speed;
-      if (p.progress >= 1) {
-        p.status = 'falling';
-        falling.push(p);
+
+      if (p.progress >= 1) return false;
+
+      if (p.status === 'moving' && p.progress >= CATCH_THRESHOLD) {
+        p.status = 'catchable';
+      }
+
+      if (p.status === 'catchable' && p.zone === playerZone) {
+        const orderEntry = order.find((o) => o.itemId === p.itemId && !o.collected);
+        if (orderEntry) {
+          orderEntry.collected = true;
+          scoreChange += SCORE_HIT;
+        } else {
+          scoreChange += SCORE_MISS;
+        }
+        hasCatch = true;
         return false;
       }
+
       return true;
     });
+
     if (this.state.products.length !== before) changed = true;
 
-    for (const p of falling) {
-      this.emitEvent({ type: 'falling', product: p });
+    if (hasCatch) {
+      const orderComplete = order.length > 0 && order.every((o) => o.collected);
+      if (orderComplete) scoreChange += SCORE_ORDER_COMPLETE;
+
+      this.state = {
+        ...this.state,
+        score: this.state.score + scoreChange,
+        order: orderComplete ? this.buildRandomOrder() : [...order],
+        orderNumber: this.state.orderNumber + (orderComplete ? 1 : 0),
+      };
+      changed = true;
     }
 
     if (changed) this.emit();
@@ -320,7 +263,6 @@ export class GameStore {
     };
 
     this.tickProducts(delta);
-    this.tickCatch();
     this.tickCallbacks.forEach((cb) => cb(frame, this));
 
     this.rafId = requestAnimationFrame(this.tick);

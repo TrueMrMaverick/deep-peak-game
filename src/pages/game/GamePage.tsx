@@ -51,8 +51,8 @@ function GameContent() {
       let newMirror = mirror;
 
       switch (action) {
-        case 'up':    newArms = false; break;
-        case 'down':  newArms = true; break;
+        case 'up':    newArms = true; break;
+        case 'down':  newArms = false; break;
         case 'left':  newMirror = true; break;
         case 'right': newMirror = false; break;
       }
