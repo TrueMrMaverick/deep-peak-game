@@ -10,6 +10,7 @@ export function GameOverScreen() {
       <div className='GameOverScreen-card'>
         <div className='GameOverScreen-icon'>📦</div>
         <h2 className='GameOverScreen-title'>Время вышло!</h2>
+        <p className='GameOverScreen-description'>Вы не приняты на работу в Лавку!</p>
         <div className='GameOverScreen-stats'>
           <div className='GameOverScreen-stat'>
             <span className='GameOverScreen-stat-label'>Заказов собрано</span>
