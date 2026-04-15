@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import './GamePage.css';
 import bg from './storage.jpg';
 import courierDown from './images/courier-down.svg';
@@ -7,6 +7,7 @@ import { GameStoreProvider, useGame, useGameStoreContext, ShelfZone } from './st
 import { Shelves } from './components/Shelves';
 import { OrderPanel } from './OrderPanel';
 import { GameOverScreen } from './GameOverScreen';
+import { StartScreen } from './StartScreen';
 
 const KEY_TO_ACTION: Record<string, 'up' | 'down' | 'left' | 'right'> = {
   ArrowUp: 'up',
@@ -36,11 +37,13 @@ function GameContent() {
   const courierArmsUp = useGame((s) => s.courierArmsUp);
   const courierMirrored = useGame((s) => s.courierMirrored);
   const gameOver = useGame((s) => s.gameOver);
+  const [started, setStarted] = useState(false);
 
   useEffect(() => {
+    if (!started) return;
     store.startLoop();
     return () => store.stopLoop();
-  }, [store]);
+  }, [store, started]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -88,6 +91,7 @@ function GameContent() {
           style={{ transform: courierTransform }}
         />
       </div>
+      {!started && <StartScreen onStart={() => setStarted(true)} />}
       {gameOver && <GameOverScreen />}
     </div>
   );
