@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import './GamePage.css';
 import bg from './storage.jpg';
-import courierDown from './images/courier-down.svg';
-import courierUp from './images/courier-up.svg';
+import courierDown from './images/courier-down.png';
+import courierUp from './images/courier-up.png';
 import { GameStoreProvider, useGame, useGameStoreContext, ShelfZone } from './store';
 import { Shelves } from './components/Shelves';
 import { OrderPanel } from './OrderPanel';
