@@ -27,6 +27,13 @@ const CATALOG: Item[] = [
   { id: 'pineapple', name: 'Ананас', imageUrl: PRODUCT_IMAGE_BY_ID.pineapple },
   { id: 'sausage', name: 'Колбаса', imageUrl: PRODUCT_IMAGE_BY_ID.sausage },
   { id: 'yogurt', name: 'Йогурт', imageUrl: PRODUCT_IMAGE_BY_ID.yogurt },
+  { id: 'cabbage', name: 'Капуста', imageUrl: PRODUCT_IMAGE_BY_ID.cabbage },
+  { id: 'cherry', name: 'Вишня', imageUrl: PRODUCT_IMAGE_BY_ID.cherry },
+  { id: 'coconut', name: 'Кокос', imageUrl: PRODUCT_IMAGE_BY_ID.coconut },
+  { id: 'kiwi', name: 'Киви', imageUrl: PRODUCT_IMAGE_BY_ID.kiwi },
+  { id: 'melon', name: 'Дыня', imageUrl: PRODUCT_IMAGE_BY_ID.melon },
+  { id: 'pepper', name: 'Перец', imageUrl: PRODUCT_IMAGE_BY_ID.pepper },
+  { id: 'watermelon', name: 'Арбуз', imageUrl: PRODUCT_IMAGE_BY_ID.watermelon },
 ];
 
 /**

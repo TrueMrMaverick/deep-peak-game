@@ -18,6 +18,13 @@ import milk from '../pages/game/images/milk.svg';
 import pineapple from '../pages/game/images/pineapple.svg';
 import sausage from '../pages/game/images/sausage.svg';
 import yogurt from '../pages/game/images/yogurt.svg';
+import cabbage from '../pages/game/images/cabbage.svg';
+import cherry from '../pages/game/images/cherry.svg';
+import coconut from '../pages/game/images/coconut.svg';
+import kiwi from '../pages/game/images/kiwi.svg';
+import melon from '../pages/game/images/melon.svg';
+import pepper from '../pages/game/images/pepper.svg';
+import watermelon from '../pages/game/images/watermelon.svg';
 
 /** URL картинок по id товара (CRA/webpack). */
 export const PRODUCT_IMAGE_BY_ID: Record<string, string> = {
@@ -41,4 +48,11 @@ export const PRODUCT_IMAGE_BY_ID: Record<string, string> = {
   pineapple: pineapple,
   sausage: sausage,
   yogurt: yogurt,
+  cabbage: cabbage,
+  cherry: cherry,
+  coconut: coconut,
+  kiwi: kiwi,
+  melon: melon,
+  pepper: pepper,
+  watermelon: watermelon,
 };
